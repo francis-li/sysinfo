@@ -1,0 +1,124 @@
+#!/usr/local/bin/node
+
+
+/**
+ * This is a barebones script to summarize
+ * system info for our internal servers.
+ * 
+ * It is not intended for universal compatibility.
+ * 
+ * Aside: Check out Archey on Homebrew
+ * for a hipster system summary output :)
+ */
+
+
+const os = require('os');
+const execSync = require('child_process').execSync;
+
+
+console.log('\n\n');
+
+console.log(`${new Date()}`);
+
+console.log();
+
+console.log(`Host     : ${os.hostname()}`);
+console.log(`Uptime   : ${resolveDuration(os.uptime())}`);
+
+console.log();
+
+let eth0 = os.networkInterfaces().eth0 || [];
+
+let ipv4 = eth0.reduce((v,b) => 
+  /ipv4/i.test(b.family) ? b.address : v, '-');
+
+console.log(`IPv4     : ${ipv4}`);
+
+console.log();
+
+console.log(`Arch     : ${os.arch()}`);
+console.log(`Platform : ${os.platform()}`);
+console.log(`Type     : ${os.type()}`);
+console.log(`Release  : ${os.release()}`);
+
+console.log();
+
+console.log(`OS       : ${resolveOS()}`);
+
+console.log();
+
+let cpus = os.cpus().map(cpu => cpu.model.trim());
+let proc = cpus[0].replace(/\(R\)|\(TM\)|CPU\s/g, '');
+
+console.log(`Proc     : ${proc}`);
+console.log(`Cores    : ${cpus.length}`);
+
+console.log();
+
+let totalmem = ( os.totalmem() / Math.pow(10,9) ).toFixed(2);
+let freemem = ( os.freemem() / Math.pow(10,9) ).toFixed(2);
+
+console.log(`Mem (T)  : ${totalmem} GB`);
+console.log(`Mem (A)  : ${freemem} GB`);
+
+console.log();
+
+let loadavg = os.loadavg().map(v => v.toFixed(2));
+
+console.log(`Load Avg : ${loadavg.join(', ')}`);
+
+console.log();
+
+let opts = {stdio: ['pipe', 'pipe', 'ignore']};
+let disks = String(execSync('df -Hl', opts)).trim();
+
+console.log(disks);
+
+console.log('\n\n');
+
+process.exit();
+
+
+function resolveDuration(value) {
+  let _val = null, _suf = null;
+  
+  if (value < 60) {
+    _suf = 'seconds';
+    _val = value;
+  } else if (value < 3600) {
+    _suf = 'minutes';
+    _val = ( value / 60 );
+  } else if (value < 86400) {
+    _suf = 'hours';
+    _val = ( value / 3600 );
+  } else {
+    _suf = 'days';
+    _val = ( value / 86400 );
+  }
+
+  if (!/sec/.test(_suf)) {
+    _val = _val.toFixed(2);
+  }
+
+  return `${_val} ${_suf}`;
+}
+
+function resolveOS() {
+  const opts = {stdio: ['pipe', 'pipe', 'ignore']};
+  
+  try {
+    return String(execSync('cat /etc/*-release', opts)).trim();
+  }
+  catch (e) { /* do nothing */ }
+
+  try {
+    let osx_name = String(execSync('sw_vers -productName', opts)).trim();
+    
+    let osx_vers = String(execSync('sw_vers -productVersion', opts)).trim();
+    
+    return `${osx_name} ${osx_vers}`; 
+  }
+  catch (e) { /* do nothing */ }
+
+  return '?';
+}
