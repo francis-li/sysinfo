@@ -107,7 +107,7 @@ function resolveOS() {
   const opts = {stdio: ['pipe', 'pipe', 'ignore']};
   
   try {
-    return String(execSync('cat /etc/*-release', opts)).trim();
+    return String(execSync('cat /etc/redhat-release', opts)).trim();
   }
   catch (e) { /* do nothing */ }
 
