@@ -13,7 +13,8 @@
 
 
 const os = require('os');
-const execSync = require('child_process').execSync;
+
+const { execSync } = require('child_process');
 
 
 console.log('\n\n');
@@ -27,12 +28,7 @@ console.log(`Uptime   : ${resolveDuration(os.uptime())}`);
 
 console.log();
 
-let eth0 = os.networkInterfaces().eth0 || [];
-
-let ipv4 = eth0.reduce((v,b) => 
-  /ipv4/i.test(b.family) ? b.address : v, '-');
-
-console.log(`IPv4     : ${ipv4}`);
+console.log(`IPv4     : ${resolveIp()}`);
 
 console.log();
 
@@ -47,30 +43,30 @@ console.log(`OS       : ${resolveOS()}`);
 
 console.log();
 
-let cpus = os.cpus().map(cpu => cpu.model.trim());
-let proc = cpus[0].replace(/\(R\)|\(TM\)|CPU\s/g, '');
+const cpus = os.cpus().map(cpu => cpu.model.trim());
+const proc = cpus[0].replace(/\(R\)|\(TM\)|CPU\s/g, '');
 
 console.log(`Proc     : ${proc}`);
 console.log(`Cores    : ${cpus.length}`);
 
 console.log();
 
-let totalmem = ( os.totalmem() / Math.pow(10,9) ).toFixed(2);
-let freemem = ( os.freemem() / Math.pow(10,9) ).toFixed(2);
+const totalmem = ( os.totalmem() / Math.pow(10,9) ).toFixed(2);
+const freemem = ( os.freemem() / Math.pow(10,9) ).toFixed(2);
 
 console.log(`Mem (T)  : ${totalmem} GB`);
 console.log(`Mem (A)  : ${freemem} GB`);
 
 console.log();
 
-let loadavg = os.loadavg().map(v => v.toFixed(2));
+const loadavg = os.loadavg().map(v => v.toFixed(2));
 
 console.log(`Load Avg : ${loadavg.join(', ')}`);
 
 console.log();
 
-let opts = {stdio: ['pipe', 'pipe', 'ignore']};
-let disks = String(execSync('df -Hl', opts)).trim();
+const opts = {stdio: ['pipe', 'pipe', 'ignore']};
+const disks = String(execSync('df -Hl', opts)).trim();
 
 console.log(disks);
 
@@ -103,22 +99,45 @@ function resolveDuration(value) {
   return `${_val} ${_suf}`;
 }
 
+function resolveIp() {
+  const opts = {stdio: ['pipe', 'pipe', 'ignore']};
+
+  try {
+    // const eth0 = os.networkInterfaces().eth0 || [];
+
+    // return eth0.reduce((v,b) => /ipv4/i.test(b.family) ? b.address : v, '-');
+
+    return String(execSync('hostname -i', opts)).trim();
+  }
+  catch (e) {
+    // Do nothing
+  }
+
+  return '-';
+}
+
 function resolveOS() {
   const opts = {stdio: ['pipe', 'pipe', 'ignore']};
   
   try {
-    return String(execSync('cat /etc/redhat-release', opts)).trim();
+    // return String(execSync('cat /etc/redhat-release', opts)).trim();
+
+    return String(execSync('lsb_release -a | grep Description', opts)).split(':')[1].trim();
   }
-  catch (e) { /* do nothing */ }
+  catch (e) {
+    // Do nothing
+  }
 
   try {
-    let osx_name = String(execSync('sw_vers -productName', opts)).trim();
+    const osx_name = String(execSync('sw_vers -productName', opts)).trim();
     
-    let osx_vers = String(execSync('sw_vers -productVersion', opts)).trim();
+    const osx_vers = String(execSync('sw_vers -productVersion', opts)).trim();
     
     return `${osx_name} ${osx_vers}`; 
   }
-  catch (e) { /* do nothing */ }
+  catch (e) {
+    // Do nothing
+  }
 
-  return '?';
+  return '-';
 }
